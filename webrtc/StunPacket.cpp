@@ -643,8 +643,13 @@ namespace RTC
 
 				case AF_INET6:
 				{
-					xorMappedAddressPaddedLen = 20;
-					this->size += 4 + 20;
+					if (IN6_IS_ADDR_V4MAPPED(&((struct sockaddr_in6 *)this->xorMappedAddress)->sin6_addr)) {
+						xorMappedAddressPaddedLen = 8;
+						this->size += 4 + 8;
+					}else{
+						xorMappedAddressPaddedLen = 20;
+						this->size += 4 + 20;
+					}
 
 					break;
 				}
@@ -772,42 +777,63 @@ namespace RTC
 
 				case AF_INET6:
 				{
-					// Set first byte to 0.
-					attrValue[0] = 0;
-					// Set inet family.
-					attrValue[1] = 0x02;
-					// Set port and XOR it.
-					std::memcpy(
-					  attrValue + 2,
-					  &(reinterpret_cast<const sockaddr_in6*>(this->xorMappedAddress))->sin6_port,
-					  2);
-					attrValue[2] ^= StunPacket::magicCookie[0];
-					attrValue[3] ^= StunPacket::magicCookie[1];
-					// Set address and XOR it.
-					std::memcpy(
-					  attrValue + 4,
-					  &(reinterpret_cast<const sockaddr_in6*>(this->xorMappedAddress))->sin6_addr.s6_addr,
-					  16);
-					attrValue[4] ^= StunPacket::magicCookie[0];
-					attrValue[5] ^= StunPacket::magicCookie[1];
-					attrValue[6] ^= StunPacket::magicCookie[2];
-					attrValue[7] ^= StunPacket::magicCookie[3];
-					attrValue[8] ^= this->transactionId[0];
-					attrValue[9] ^= this->transactionId[1];
-					attrValue[10] ^= this->transactionId[2];
-					attrValue[11] ^= this->transactionId[3];
-					attrValue[12] ^= this->transactionId[4];
-					attrValue[13] ^= this->transactionId[5];
-					attrValue[14] ^= this->transactionId[6];
-					attrValue[15] ^= this->transactionId[7];
-					attrValue[16] ^= this->transactionId[8];
-					attrValue[17] ^= this->transactionId[9];
-					attrValue[18] ^= this->transactionId[10];
-					attrValue[19] ^= this->transactionId[11];
+                    if (IN6_IS_ADDR_V4MAPPED(&((struct sockaddr_in6 *)this->xorMappedAddress)->sin6_addr)) {
+                        // Set first byte to 0.
+                        attrValue[0] = 0;
+                        // Set inet family.
+                        attrValue[1] = 0x01;
+                        // Set port and XOR it.
+                        std::memcpy(
+                            attrValue + 2, &(reinterpret_cast<const sockaddr_in6 *>(this->xorMappedAddress))->sin6_port,
+                            2);
+                        attrValue[2] ^= StunPacket::magicCookie[0];
+                        attrValue[3] ^= StunPacket::magicCookie[1];
+                        // Set address and XOR it.
+                        std::memcpy(
+                            attrValue + 4,
+                            12 + (char *)&(((struct sockaddr_in6 *)this->xorMappedAddress)->sin6_addr), 4);
+                        attrValue[4] ^= StunPacket::magicCookie[0];
+                        attrValue[5] ^= StunPacket::magicCookie[1];
+                        attrValue[6] ^= StunPacket::magicCookie[2];
+                        attrValue[7] ^= StunPacket::magicCookie[3];
 
-					pos += 4 + 20;
+                        pos += 4 + 8;
+                    } else {
+                        // Set first byte to 0.
+                        attrValue[0] = 0;
+                        // Set inet family.
+                        attrValue[1] = 0x02;
+                        // Set port and XOR it.
+                        std::memcpy(
+                            attrValue + 2, &(reinterpret_cast<const sockaddr_in6 *>(this->xorMappedAddress))->sin6_port,
+                            2);
+                        attrValue[2] ^= StunPacket::magicCookie[0];
+                        attrValue[3] ^= StunPacket::magicCookie[1];
+                        // Set address and XOR it.
+                        std::memcpy(
+                            attrValue + 4,
+                            &(reinterpret_cast<const sockaddr_in6 *>(this->xorMappedAddress))->sin6_addr.s6_addr, 16);
+                        attrValue[4] ^= StunPacket::magicCookie[0];
+                        attrValue[5] ^= StunPacket::magicCookie[1];
+                        attrValue[6] ^= StunPacket::magicCookie[2];
+                        attrValue[7] ^= StunPacket::magicCookie[3];
+                        attrValue[8] ^= this->transactionId[0];
+                        attrValue[9] ^= this->transactionId[1];
+                        attrValue[10] ^= this->transactionId[2];
+                        attrValue[11] ^= this->transactionId[3];
+                        attrValue[12] ^= this->transactionId[4];
+                        attrValue[13] ^= this->transactionId[5];
+                        attrValue[14] ^= this->transactionId[6];
+                        attrValue[15] ^= this->transactionId[7];
+                        attrValue[16] ^= this->transactionId[8];
+                        attrValue[17] ^= this->transactionId[9];
+                        attrValue[18] ^= this->transactionId[10];
+                        attrValue[19] ^= this->transactionId[11];
 
-					break;
+                        pos += 4 + 20;
+                    }
+
+                    break;
 				}
 			}
 		}
